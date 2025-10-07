@@ -45,7 +45,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               <Input
                 id="email"
                 type="text"
-                placeholder="RomanYarg"
+                placeholder="Введите ваш логин"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11"
@@ -70,10 +70,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               Войти в систему
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Тестовый доступ:</p>
-            <p className="font-mono mt-1">RomanYarg / 1qaz2wsx</p>
-          </div>
         </CardContent>
       </Card>
     </div>

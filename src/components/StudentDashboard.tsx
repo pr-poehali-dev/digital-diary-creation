@@ -77,7 +77,28 @@ const StudentDashboard = ({
     ? (myGrades.reduce((sum, g) => sum + g.grade, 0) / myGrades.length).toFixed(2)
     : '0.00';
 
+  const gradesBySubject = myGrades.reduce((acc, grade) => {
+    if (!acc[grade.subject]) {
+      acc[grade.subject] = [];
+    }
+    acc[grade.subject].push(grade.grade);
+    return acc;
+  }, {} as Record<string, number[]>);
+
+  const subjectAverages = Object.entries(gradesBySubject).map(([subject, gradesList]) => ({
+    subject,
+    average: (gradesList.reduce((sum, g) => sum + g, 0) / gradesList.length).toFixed(2),
+    count: gradesList.length
+  }));
+
   const weekDays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+
+  const getGradeColor = (grade: number) => {
+    if (grade === 5) return 'text-green-600 bg-green-50 border-green-200';
+    if (grade === 4) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (grade === 3) return 'text-orange-600 bg-orange-50 border-orange-200';
+    return 'text-red-600 bg-red-50 border-red-200';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
@@ -108,10 +129,14 @@ const StudentDashboard = ({
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-white shadow-sm">
             <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
               <Icon name="Home" size={16} />
               <span className="hidden sm:inline">Обзор</span>
+            </TabsTrigger>
+            <TabsTrigger value="grades" className="flex items-center gap-2 py-3">
+              <Icon name="Award" size={16} />
+              <span className="hidden sm:inline">Оценки</span>
             </TabsTrigger>
             <TabsTrigger value="schedule" className="flex items-center gap-2 py-3">
               <Icon name="Calendar" size={16} />
@@ -185,6 +210,90 @@ const StudentDashboard = ({
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="grades" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Мои оценки</CardTitle>
+                <CardDescription>Все ваши оценки по предметам</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {myGrades.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Оценки пока не выставлены
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {myGrades
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((grade) => (
+                        <div
+                          key={grade.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white"
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-lg">{grade.subject}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(grade.date).toLocaleDateString('ru-RU')}
+                            </p>
+                          </div>
+                          <div
+                            className={`text-3xl font-bold px-6 py-2 rounded-lg border-2 ${
+                              getGradeColor(grade.grade)
+                            }`}
+                          >
+                            {grade.grade}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Средний балл по предметам</CardTitle>
+                <CardDescription>Ваша успеваемость по каждому предмету</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {subjectAverages.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Статистика появится после выставления оценок
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {subjectAverages
+                      .sort((a, b) => parseFloat(b.average) - parseFloat(a.average))
+                      .map((item) => (
+                        <div
+                          key={item.subject}
+                          className="p-4 border border-gray-200 rounded-lg bg-white"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-lg">{item.subject}</h4>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground">
+                                Оценок: {item.count}
+                              </span>
+                              <span className="text-2xl font-bold text-primary">
+                                {item.average}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all"
+                              style={{ width: `${(parseFloat(item.average) / 5) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="schedule">

@@ -7,8 +7,8 @@ import ClassManagement from '@/components/ClassManagement';
 import StudentManagement from '@/components/StudentManagement';
 import GradeManagement from '@/components/GradeManagement';
 import ScheduleManagement from '@/components/ScheduleManagement';
-import HomeworkManagement from '@/components/HomeworkManagement';
 import ProfileSettings from '@/components/ProfileSettings';
+import TeacherStatistics from '@/components/TeacherStatistics';
 
 type User = {
   id: string;
@@ -120,10 +120,14 @@ const TeacherDashboard = ({
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-white shadow-sm">
             <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
               <Icon name="Home" size={16} />
               <span className="hidden sm:inline">Обзор</span>
+            </TabsTrigger>
+            <TabsTrigger value="statistics" className="flex items-center gap-2 py-3">
+              <Icon name="BarChart" size={16} />
+              <span className="hidden sm:inline">Статистика</span>
             </TabsTrigger>
             <TabsTrigger value="classes" className="flex items-center gap-2 py-3">
               <Icon name="Users" size={16} />
@@ -210,6 +214,10 @@ const TeacherDashboard = ({
                 </CardDescription>
               </CardHeader>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="statistics">
+            <TeacherStatistics students={students} grades={grades} classes={classes} />
           </TabsContent>
 
           <TabsContent value="classes">
