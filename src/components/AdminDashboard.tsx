@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
-import GradeManagement from '@/components/GradeManagement';
+import AdminClassManagement from '@/components/AdminClassManagement';
+import AdminTeacherManagement from '@/components/AdminTeacherManagement';
+import AdminStudentManagement from '@/components/AdminStudentManagement';
 import ScheduleManagement from '@/components/ScheduleManagement';
 import ProfileSettings from '@/components/ProfileSettings';
 import TeacherStatistics from '@/components/TeacherStatistics';
@@ -66,39 +68,48 @@ type Homework = {
   dueDate: string;
 };
 
-type TeacherDashboardProps = {
+type AdminDashboardProps = {
   user: User;
-  teacher?: Teacher;
   classes: Class[];
+  teachers: Teacher[];
   students: Student[];
   grades: Grade[];
   schedules: Schedule[];
   homework: Homework[];
   onLogout: () => void;
-  onAddGrade: (grade: Omit<Grade, 'id' | 'teacherId'>) => void;
+  onAddClass: (name: string) => void;
+  onAddTeacher: (teacher: Omit<Teacher, 'id'>) => void;
+  onUpdateTeacher: (teacherId: string, updates: Partial<Teacher>) => void;
+  onDeleteTeacher: (teacherId: string) => void;
+  onAddStudent: (student: Omit<Student, 'id'>) => void;
+  onUpdateStudent: (studentId: string, updates: Partial<Student>) => void;
+  onDeleteStudent: (studentId: string) => void;
   onAddSchedule: (schedule: Omit<Schedule, 'id'>) => void;
   onAddHomework: (homework: Omit<Homework, 'id'>) => void;
   onUpdateProfile: (avatar: string, name: string) => void;
 };
 
-const TeacherDashboard = ({
+const AdminDashboard = ({
   user,
-  teacher,
   classes,
+  teachers,
   students,
   grades,
   schedules,
   homework,
   onLogout,
-  onAddGrade,
+  onAddClass,
+  onAddTeacher,
+  onUpdateTeacher,
+  onDeleteTeacher,
+  onAddStudent,
+  onUpdateStudent,
+  onDeleteStudent,
   onAddSchedule,
   onAddHomework,
   onUpdateProfile
-}: TeacherDashboardProps) => {
+}: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
-
-  const myGrades = grades.filter(g => g.teacherId === user.id);
-  const mySubjects = teacher?.subjects || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100">
@@ -110,7 +121,7 @@ const TeacherDashboard = ({
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">Электронный Журнал Веб</h1>
-              <p className="text-sm text-muted-foreground">Панель учителя</p>
+              <p className="text-sm text-muted-foreground">Панель администратора</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -118,7 +129,7 @@ const TeacherDashboard = ({
               <p className="font-semibold text-sm">{user.name}</p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
-            <div className="text-4xl">{user.avatar || '👨‍🏫'}</div>
+            <div className="text-4xl">{user.avatar || '👑'}</div>
             <Button onClick={onLogout} variant="outline" size="sm">
               <Icon name="LogOut" size={16} className="mr-2" />
               Выйти
@@ -129,7 +140,7 @@ const TeacherDashboard = ({
 
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-white shadow-sm">
             <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
               <Icon name="Home" size={16} />
               <span className="hidden sm:inline">Обзор</span>
@@ -138,9 +149,17 @@ const TeacherDashboard = ({
               <Icon name="BarChart" size={16} />
               <span className="hidden sm:inline">Статистика</span>
             </TabsTrigger>
-            <TabsTrigger value="grades" className="flex items-center gap-2 py-3">
-              <Icon name="Award" size={16} />
-              <span className="hidden sm:inline">Оценки</span>
+            <TabsTrigger value="classes" className="flex items-center gap-2 py-3">
+              <Icon name="Users" size={16} />
+              <span className="hidden sm:inline">Классы</span>
+            </TabsTrigger>
+            <TabsTrigger value="teachers" className="flex items-center gap-2 py-3">
+              <Icon name="GraduationCap" size={16} />
+              <span className="hidden sm:inline">Учителя</span>
+            </TabsTrigger>
+            <TabsTrigger value="students" className="flex items-center gap-2 py-3">
+              <Icon name="UserPlus" size={16} />
+              <span className="hidden sm:inline">Ученики</span>
             </TabsTrigger>
             <TabsTrigger value="schedule" className="flex items-center gap-2 py-3">
               <Icon name="Calendar" size={16} />
@@ -154,29 +173,42 @@ const TeacherDashboard = ({
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Icon name="Users" size={20} />
-                    Мои классы
+                    Классы
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold">{classes.length}</div>
-                  <p className="text-blue-100 text-sm mt-1">Классов в работе</p>
+                  <p className="text-purple-100 text-sm mt-1">Всего классов</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Icon name="GraduationCap" size={20} />
+                    Учителя
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold">{teachers.length}</div>
+                  <p className="text-blue-100 text-sm mt-1">Всего учителей</p>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Icon name="GraduationCap" size={20} />
-                    Мои ученики
+                    <Icon name="Users" size={20} />
+                    Ученики
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold">{students.length}</div>
-                  <p className="text-green-100 text-sm mt-1">Учеников в классах</p>
+                  <p className="text-green-100 text-sm mt-1">Всего учеников</p>
                 </CardContent>
               </Card>
 
@@ -184,25 +216,12 @@ const TeacherDashboard = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Icon name="Award" size={20} />
-                    Мои оценки
+                    Оценки
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-4xl font-bold">{myGrades.length}</div>
-                  <p className="text-orange-100 text-sm mt-1">Выставлено мной</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Icon name="BookOpen" size={20} />
-                    Мои предметы
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-bold">{mySubjects.length}</div>
-                  <p className="text-purple-100 text-sm mt-1">Преподаю предметов</p>
+                  <div className="text-4xl font-bold">{grades.length}</div>
+                  <p className="text-orange-100 text-sm mt-1">Выставлено оценок</p>
                 </CardContent>
               </Card>
             </div>
@@ -211,44 +230,37 @@ const TeacherDashboard = ({
               <CardHeader>
                 <CardTitle>Добро пожаловать, {user.name}!</CardTitle>
                 <CardDescription>
-                  Ваши предметы: {mySubjects.length > 0 ? mySubjects.join(', ') : 'Не назначены'}
+                  Используйте вкладки выше для управления системой
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                {mySubjects.length === 0 && (
-                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-sm text-orange-800">
-                      <Icon name="AlertCircle" size={16} className="inline mr-2" />
-                      Обратитесь к администратору для назначения предметов и классов
-                    </p>
-                  </div>
-                )}
-                {classes.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="font-semibold mb-2">Ваши классы:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {classes.map(cls => (
-                        <span key={cls.id} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg">
-                          {cls.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="statistics">
-            <TeacherStatistics students={students} grades={myGrades} classes={classes} />
+            <TeacherStatistics students={students} grades={grades} classes={classes} />
           </TabsContent>
 
-          <TabsContent value="grades">
-            <GradeManagement
+          <TabsContent value="classes">
+            <AdminClassManagement classes={classes} onAddClass={onAddClass} />
+          </TabsContent>
+
+          <TabsContent value="teachers">
+            <AdminTeacherManagement
+              teachers={teachers}
+              classes={classes}
+              onAddTeacher={onAddTeacher}
+              onUpdateTeacher={onUpdateTeacher}
+              onDeleteTeacher={onDeleteTeacher}
+            />
+          </TabsContent>
+
+          <TabsContent value="students">
+            <AdminStudentManagement
               students={students}
-              grades={myGrades}
-              teacherSubjects={mySubjects}
-              onAddGrade={onAddGrade}
+              classes={classes}
+              onAddStudent={onAddStudent}
+              onUpdateStudent={onUpdateStudent}
+              onDeleteStudent={onDeleteStudent}
             />
           </TabsContent>
 
@@ -271,4 +283,4 @@ const TeacherDashboard = ({
   );
 };
 
-export default TeacherDashboard;
+export default AdminDashboard;

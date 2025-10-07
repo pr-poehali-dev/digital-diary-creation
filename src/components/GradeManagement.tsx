@@ -22,12 +22,14 @@ type Grade = {
   subject: string;
   grade: number;
   date: string;
+  teacherId: string;
 };
 
 type GradeManagementProps = {
   students: Student[];
   grades: Grade[];
-  onAddGrade: (grade: Omit<Grade, 'id'>) => void;
+  teacherSubjects?: string[];
+  onAddGrade: (grade: Omit<Grade, 'id' | 'teacherId'>) => void;
 };
 
 const subjects = [
@@ -45,7 +47,7 @@ const subjects = [
   'Физкультура'
 ];
 
-const GradeManagement = ({ students, grades, onAddGrade }: GradeManagementProps) => {
+const GradeManagement = ({ students, grades, teacherSubjects, onAddGrade }: GradeManagementProps) => {
   const [studentId, setStudentId] = useState('');
   const [subject, setSubject] = useState('');
   const [gradeValue, setGradeValue] = useState('');
@@ -107,7 +109,7 @@ const GradeManagement = ({ students, grades, onAddGrade }: GradeManagementProps)
                     <SelectValue placeholder="Выберите предмет" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((subj) => (
+                    {(teacherSubjects && teacherSubjects.length > 0 ? teacherSubjects : subjects).map((subj) => (
                       <SelectItem key={subj} value={subj}>
                         {subj}
                       </SelectItem>
@@ -131,13 +133,18 @@ const GradeManagement = ({ students, grades, onAddGrade }: GradeManagementProps)
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={students.length === 0}>
+            <Button type="submit" className="w-full" disabled={students.length === 0 || (teacherSubjects && teacherSubjects.length === 0)}>
               <Icon name="Award" size={16} className="mr-2" />
               Выставить оценку
             </Button>
             {students.length === 0 && (
               <p className="text-sm text-destructive text-center">
-                Сначала добавьте учеников
+                Нет учеников в ваших классах
+              </p>
+            )}
+            {teacherSubjects && teacherSubjects.length === 0 && (
+              <p className="text-sm text-destructive text-center">
+                У вас нет назначенных предметов. Обратитесь к администратору.
               </p>
             )}
           </form>

@@ -2,20 +2,30 @@ import { useState } from 'react';
 import LoginPage from '@/components/LoginPage';
 import TeacherDashboard from '@/components/TeacherDashboard';
 import StudentDashboard from '@/components/StudentDashboard';
+import AdminDashboard from '@/components/AdminDashboard';
 
 type User = {
   id: string;
   email: string;
   password: string;
-  role: 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student';
   name: string;
+  avatar?: string;
+};
+
+type Teacher = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  subjects: string[];
+  classIds: string[];
   avatar?: string;
 };
 
 type Class = {
   id: string;
   name: string;
-  teacherId: string;
 };
 
 type Student = {
@@ -33,6 +43,7 @@ type Grade = {
   subject: string;
   grade: number;
   date: string;
+  teacherId: string;
 };
 
 type Schedule = {
@@ -55,11 +66,31 @@ const Index = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([
     {
+      id: '0',
+      email: 'Админ',
+      password: 'Админ2011',
+      role: 'admin',
+      name: 'Администратор Школы',
+      avatar: '👑'
+    },
+    {
       id: '1',
       email: 'RomanYarg',
       password: '1qaz2wsx',
       role: 'teacher',
       name: 'Роман Ярославович',
+      avatar: '👨‍🏫'
+    }
+  ]);
+
+  const [teachers, setTeachers] = useState<Teacher[]>([
+    {
+      id: '1',
+      name: 'Роман Ярославович',
+      email: 'RomanYarg',
+      password: '1qaz2wsx',
+      subjects: [],
+      classIds: [],
       avatar: '👨‍🏫'
     }
   ]);
@@ -83,16 +114,47 @@ const Index = () => {
   };
 
   const addClass = (name: string) => {
-    if (!currentUser || currentUser.role !== 'teacher') return;
+    if (!currentUser || currentUser.role !== 'admin') return;
     const newClass: Class = {
       id: Date.now().toString(),
-      name,
-      teacherId: currentUser.id
+      name
     };
     setClasses([...classes, newClass]);
   };
 
+  const addTeacher = (teacher: Omit<Teacher, 'id'>) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    const newTeacher: Teacher = {
+      ...teacher,
+      id: Date.now().toString()
+    };
+    setTeachers([...teachers, newTeacher]);
+
+    const newUser: User = {
+      id: newTeacher.id,
+      email: teacher.email,
+      password: teacher.password,
+      role: 'teacher',
+      name: teacher.name,
+      avatar: teacher.avatar
+    };
+    setUsers([...users, newUser]);
+  };
+
+  const updateTeacher = (teacherId: string, updates: Partial<Teacher>) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    setTeachers(teachers.map(t => t.id === teacherId ? { ...t, ...updates } : t));
+    setUsers(users.map(u => u.id === teacherId ? { ...u, name: updates.name || u.name, avatar: updates.avatar || u.avatar } : u));
+  };
+
+  const deleteTeacher = (teacherId: string) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    setTeachers(teachers.filter(t => t.id !== teacherId));
+    setUsers(users.filter(u => u.id !== teacherId));
+  };
+
   const addStudent = (student: Omit<Student, 'id'>) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
     const newStudent: Student = {
       ...student,
       id: Date.now().toString()
@@ -110,10 +172,29 @@ const Index = () => {
     setUsers([...users, newUser]);
   };
 
-  const addGrade = (grade: Omit<Grade, 'id'>) => {
+  const updateStudent = (studentId: string, updates: Partial<Student>) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    setStudents(students.map(s => s.id === studentId ? { ...s, ...updates } : s));
+    setUsers(users.map(u => u.id === studentId ? { ...u, name: updates.name || u.name, avatar: updates.avatar || u.avatar } : u));
+  };
+
+  const deleteStudent = (studentId: string) => {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    setStudents(students.filter(s => s.id !== studentId));
+    setUsers(users.filter(u => u.id !== studentId));
+    setGrades(grades.filter(g => g.studentId !== studentId));
+  };
+
+  const addGrade = (grade: Omit<Grade, 'id' | 'teacherId'>) => {
+    if (!currentUser || currentUser.role !== 'teacher') return;
+    
+    const teacher = teachers.find(t => t.id === currentUser.id);
+    if (!teacher || !teacher.subjects.includes(grade.subject)) return;
+
     const newGrade: Grade = {
       ...grade,
-      id: Date.now().toString()
+      id: Date.now().toString(),
+      teacherId: currentUser.id
     };
     setGrades([...grades, newGrade]);
   };
@@ -143,6 +224,8 @@ const Index = () => {
     
     if (currentUser.role === 'student') {
       setStudents(students.map(s => s.id === currentUser.id ? { ...s, avatar, name } : s));
+    } else if (currentUser.role === 'teacher') {
+      setTeachers(teachers.map(t => t.id === currentUser.id ? { ...t, avatar, name } : t));
     }
   };
 
@@ -150,18 +233,46 @@ const Index = () => {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  if (currentUser.role === 'teacher') {
+  if (currentUser.role === 'admin') {
     return (
-      <TeacherDashboard
+      <AdminDashboard
         user={currentUser}
         classes={classes}
+        teachers={teachers}
         students={students}
         grades={grades}
         schedules={schedules}
         homework={homework}
         onLogout={handleLogout}
         onAddClass={addClass}
+        onAddTeacher={addTeacher}
+        onUpdateTeacher={updateTeacher}
+        onDeleteTeacher={deleteTeacher}
         onAddStudent={addStudent}
+        onUpdateStudent={updateStudent}
+        onDeleteStudent={deleteStudent}
+        onAddSchedule={addSchedule}
+        onAddHomework={addHomework}
+        onUpdateProfile={updateUserProfile}
+      />
+    );
+  }
+
+  if (currentUser.role === 'teacher') {
+    const teacher = teachers.find(t => t.id === currentUser.id);
+    const teacherClasses = classes.filter(c => teacher?.classIds.includes(c.id));
+    const teacherStudents = students.filter(s => teacher?.classIds.includes(s.classId));
+
+    return (
+      <TeacherDashboard
+        user={currentUser}
+        teacher={teacher}
+        classes={teacherClasses}
+        students={teacherStudents}
+        grades={grades}
+        schedules={schedules}
+        homework={homework}
+        onLogout={handleLogout}
         onAddGrade={addGrade}
         onAddSchedule={addSchedule}
         onAddHomework={addHomework}
